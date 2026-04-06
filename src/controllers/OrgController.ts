@@ -22,6 +22,8 @@ import { Request, Body, Controller, Get, Patch, Path, Post, Queries, Route, Succ
 import { AddGroupMemberRequest, GetGroupInfoResponse, GetTeamsListResponse, GetUserListOptions, GetUserListResponse, RemoveGroupMemberRequest, SeasonType, TeamType, UserInformationBrief, GetTeamsForUsernameResponse, AuthentikClientError, CreateUserRequest, ServiceSeasonType, AuthentikClientErrorType } from "../clients/AuthentikClient/models";
 import { AuthentikClient } from "../clients/AuthentikClient";
 import { Invite } from "../models/Invites";
+import { TeamMeeting } from "../models/TeamMeeting";
+import { TeamMeetingAttendance } from "../models/TeamMeetingAttendance";
 import { EmailClient } from "../clients/EmailClient";
 import { SharedResourceClient } from '../clients';
 import { ENABLED_SHARED_RESOURCES, ENABLED_TEAMSETTING_RESOURCES, ENABLED_SERVICE_TEAMS, TEAM_TYPE_CONFIGS } from '../config';
@@ -128,6 +130,16 @@ interface APIGetTeamsListOptions {
     limit?: number;
     /** Base-64 Encoded Cursor */
     cursor?: string;
+}
+
+interface APITeamMeetingInfoResponse {
+    name: string;
+    date: Date,
+    location: string,
+    createdByPk: number;
+    createdAt: Date,
+    isRecurring: boolean,
+    recurrenceRule?: string;
 }
 
 
@@ -1515,6 +1527,37 @@ export class OrgController extends Controller {
             await this.authentikClient.removeAllTeamMembers(teamId);
 
         // sync bindles
+    }
+
+    /**
+     * Provides information about the team meetings of a specific team in the orginization. 
+     * Access granted to all OIDC authenticated users without any bindle restrictions.
+     * 
+     * @param teamId Team ID
+     * @returns List of Team Meeting Information
+     */
+    @Get("teams/{teamId}/meetings")
+    @Tags("Team Meetings")
+    @SuccessResponse(200)
+    @Security("oidc")
+    async getTeamMeetings(@Path() teamId: string): Promise<APITeamMeetingInfoResponse[]> {
+        const primaryTeam = await this.authentikClient.getGroupInfo(teamId);
+
+        const meetings = await TeamMeeting.find({
+            teamId: teamId
+        }).sort({ date: 1});
+
+        return meetings.map(m => ({
+            name: m.name,
+            date: m.date,
+            location: m.location,
+            createdByPk: parseInt(m.createdBy.toString(), 10),
+            createdAt: m.createdAt,
+            isRecurring: m.isRecurring,
+            ...(m.recurrenceRule !== undefined && {
+                recurrenceRule: m.recurrenceRule
+            })
+        }));
     }
 
     /* === HELPER ROUTINES === */
