@@ -225,7 +225,6 @@ export const TEAM_TYPE_CONFIGS: Partial<Record<TeamType, TeamTypeConfig>> = {
  */
 export const ADMIN_AUTHORITY_TEAMS: ReadonlySet<string> = new Set([
   "ExecutiveBoard",
-  "TechOps",
 ]);
 
 /**
@@ -237,13 +236,16 @@ export const ADMIN_AUTHORITY_TEAMS: ReadonlySet<string> = new Set([
  * only the root therefore granted past executives full override on every team
  * for as long as they stayed in the alumni group.
  *
- * Membership is read from the user's own groups, so "Previous Executives" and
- * "Previous Tech Ops" are records of who used to hold the role, not a way to
- * keep it. Add a subteam here to grant authority through it.
+ * Membership is read from the user's own groups, so "Previous Executives" is a
+ * record of who used to hold the role, not a way to keep it. Add a subteam
+ * here to grant authority through it.
+ *
+ * TechOps deliberately holds no authority: it is recruited into like any other
+ * team, so membership must not imply an org-wide override. TechOps leads who
+ * need it are granted superuser in Authentik individually.
  */
 export const ADMIN_AUTHORITY_SUBTEAMS: ReadonlySet<string> = new Set([
   "ExecutiveBoardMembers",
-  "TechOpsMembers",
 ]);
 
 /**
